@@ -1,6 +1,7 @@
 package dev.eths.legacytab.listener;
 
 import dev.eths.legacytab.LegacyTab;
+import dev.eths.legacytab.LegacyTabPlugin;
 import dev.eths.legacytab.example.ExampleAdapter;
 import dev.eths.legacytab.player.WrappedTabPlayer;
 import dev.eths.legacytab.util.IListener;
@@ -23,6 +24,7 @@ public class PlayerJoinListener extends IListener {
                 new WrappedTabPlayer(player));
 
 
-        service.setAdapter(player, new ExampleAdapter());
+        if (this.plugin instanceof LegacyTabPlugin)
+            service.setAdapter(player, new ExampleAdapter());
     }
 }
