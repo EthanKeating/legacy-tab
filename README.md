@@ -11,7 +11,7 @@ LegacyTab is a powerful 1.8 Tablist API designed to manipulate the tablist in Mi
 - **Developer-Friendly**: Easy-to-use API for integrating with existing plugins or projects.
 ---
 
-[![Image](https://i.postimg.cc/L5x3shmV/ezgif-3-e6479d8a4e.gif)]
+[![ezgif-3-e6479d8a4e.gif](https://i.postimg.cc/L5x3shmV/ezgif-3-e6479d8a4e.gif)](https://postimg.cc/fS092zt3)
 
 ## Installation
 1. Download the latest version of the Legacy-Tab jar from the [Releases](#).
