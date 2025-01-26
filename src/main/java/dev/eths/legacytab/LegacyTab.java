@@ -1,5 +1,7 @@
 package dev.eths.legacytab;
 
+import com.github.retrooper.packetevents.PacketEvents;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import dev.eths.legacytab.listener.PlayerJoinListener;
 import dev.eths.legacytab.listener.PlayerQuitListener;
@@ -21,6 +23,10 @@ public class LegacyTab {
     public LegacyTab(JavaPlugin plugin) {
         this.service = this;
 
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(plugin));
+        PacketEvents.getAPI().getSettings().checkForUpdates(false).bStats(false);
+        PacketEvents.getAPI().load();
+
         new PlayerJoinListener(plugin, service);
         new PlayerQuitListener(plugin, service);
         new LegacyTabThread(service).start();
@@ -30,6 +36,12 @@ public class LegacyTab {
         WrappedTabPlayer tabPlayer = playerMap.get(player.getUniqueId());
         if (tabPlayer != null)
             tabPlayer.setTabAdapter(tabAdapter);
+    }
+
+    public void removeAdapter(Player player) {
+        WrappedTabPlayer tabPlayer = playerMap.get(player.getUniqueId());
+        if (tabPlayer != null)
+            tabPlayer.setTabAdapter(TabAdapter.DEFAULT);
     }
 
 }
