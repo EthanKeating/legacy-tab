@@ -3,6 +3,7 @@ package dev.eths.legacytab.tab;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.player.UserProfile;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfo;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerListHeaderAndFooter;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTeams;
 import lombok.Getter;
 import dev.eths.legacytab.player.WrappedTabPlayer;
@@ -16,10 +17,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class TabImpl {
 
@@ -33,6 +33,7 @@ public class TabImpl {
 
     private final WrappedTabPlayer tabPlayer;
     private final HashMap<Integer, TabElement> elements = new HashMap<>();
+    private Pair<List<String>, List<String>> headerFooter = new Pair<>(Collections.emptyList(), Collections.emptyList());
 
     public TabImpl(WrappedTabPlayer tabPlayer) {
         this.tabPlayer = tabPlayer;
@@ -74,6 +75,8 @@ public class TabImpl {
     }
 
     public void tick(TabAdapter tabAdapter) {
+
+        updateHeaderFooter(tabAdapter.getHeaderFooter(tabPlayer));
 
         for (int i = 0; i < 80; i++) {
 
@@ -134,6 +137,22 @@ public class TabImpl {
                             )
                     ))
             );
+        }
+    }
+
+    private void updateHeaderFooter(Pair<List<String>, List<String>> newHeaderFooter) {
+        List<String> header = newHeaderFooter.getKey();
+        List<String> footer = newHeaderFooter.getValue();
+
+        if (!header.equals(headerFooter.getKey()) || !footer.equals(headerFooter.getValue())) {
+            this.headerFooter = newHeaderFooter;
+
+            WrapperPlayServerPlayerListHeaderAndFooter headerAndFooter = new WrapperPlayServerPlayerListHeaderAndFooter(
+                    Component.text(String.join("\n", ColorUtil.translate(header))),
+                    Component.text(String.join("\n", ColorUtil.translate(footer)))
+            );
+
+            tabPlayer.getUser().sendPacket(headerAndFooter);
         }
     }
 

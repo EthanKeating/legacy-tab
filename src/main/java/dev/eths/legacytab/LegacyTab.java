@@ -14,14 +14,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.HashMap;
 import java.util.UUID;
 
+@Getter
 public class LegacyTab {
 
-    private LegacyTab service;
-
-    @Getter private final HashMap<UUID, WrappedTabPlayer> playerMap = new HashMap<>();
+    private final HashMap<UUID, WrappedTabPlayer> playerMap = new HashMap<>();
 
     public LegacyTab(JavaPlugin plugin) {
-        this.service = this;
+        LegacyTab service = this;
 
         PacketEvents.setAPI(SpigotPacketEventsBuilder.build(plugin));
         PacketEvents.getAPI().getSettings().checkForUpdates(false).bStats(false);

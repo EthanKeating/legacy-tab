@@ -3,12 +3,10 @@ package dev.eths.legacytab.example;
 import dev.eths.legacytab.player.WrappedTabPlayer;
 import dev.eths.legacytab.tab.TabAdapter;
 import dev.eths.legacytab.tab.types.TabItem;
+import dev.eths.legacytab.util.Pair;
 import dev.eths.legacytab.util.Skin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class ExampleAdapter extends TabAdapter {
 
@@ -33,6 +31,12 @@ public class ExampleAdapter extends TabAdapter {
         }
 
         return items;
+    }
+
+    @Override
+    public Pair<List<String>, List<String>> getHeaderFooter(WrappedTabPlayer tabPlayer) {
+        return new Pair<>(Arrays.asList("&aThis is the header", "&eThis is another line of the header"),
+                Arrays.asList("&cThis is the footer", "&6This is another line of the footer"));
     }
 
     @Override
