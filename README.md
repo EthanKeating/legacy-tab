@@ -1,6 +1,6 @@
 # LegacyTab
 
-LegacyTab is a powerful 1.8 Tablist API designed to manipulate the tablist in Minecraft clients By sending fake player packets, Legacy-Tab allows developers to dynamically display custom information, such as statistics, player roles, or game state data, directly in the player's tab list.
+LegacyTab is a powerful 1.8 Tablist API designed to manipulate the tablist in Minecraft clients by sending fake player packets, Legacy-Tab allows developers to dynamically display custom information, such as statistics, player roles, or game state data, directly in the player's tab list.
 
 ---
 
@@ -10,6 +10,8 @@ LegacyTab is a powerful 1.8 Tablist API designed to manipulate the tablist in Mi
 - **Lightweight**: Uses its own dedicated thread for minimal performance impact on the server.
 - **Developer-Friendly**: Easy-to-use API for integrating with existing plugins or projects.
 ---
+
+[![ezgif-3-e6479d8a4e.gif](https://i.postimg.cc/L5x3shmV/ezgif-3-e6479d8a4e.gif)]([https://postimg.cc/fS092zt3](https://i.postimg.cc/L5x3shmV/ezgif-3-e6479d8a4e.gif))
 
 ## Installation
 1. Download the latest version of the Legacy-Tab jar from the [Releases](#).
