@@ -19,7 +19,6 @@ import org.bukkit.ChatColor;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public class TabImpl {
 
@@ -34,17 +33,24 @@ public class TabImpl {
     private final WrappedTabPlayer tabPlayer;
     private final HashMap<Integer, TabElement> elements = new HashMap<>();
     private Pair<List<String>, List<String>> headerFooter = new Pair<>(Collections.emptyList(), Collections.emptyList());
+    private final PlayerInfoQueue addQueue, removeQueue, nameQueue, pingQueue;
 
     public TabImpl(WrappedTabPlayer tabPlayer) {
         this.tabPlayer = tabPlayer;
+        this.addQueue = new PlayerInfoQueue(tabPlayer, WrapperPlayServerPlayerInfo.Action.ADD_PLAYER);
+        this.removeQueue = new PlayerInfoQueue(tabPlayer, WrapperPlayServerPlayerInfo.Action.REMOVE_PLAYER);
+        this.nameQueue = new PlayerInfoQueue(tabPlayer, WrapperPlayServerPlayerInfo.Action.UPDATE_DISPLAY_NAME);
+        this.pingQueue = new PlayerInfoQueue(tabPlayer, WrapperPlayServerPlayerInfo.Action.UPDATE_LATENCY);
+
 
         for (int i = 0; i < 80; i++) {
             create(i);
         }
+
+        addQueue.flush();
     }
 
     public TabElement getElement(int row, TabColumn column) {
-
         row = Math.min(19, row);
         int id = row + column.getSlot();
 
@@ -75,12 +81,11 @@ public class TabImpl {
     }
 
     public void tick(TabAdapter tabAdapter) {
-
         updateHeaderFooter(tabAdapter.getHeaderFooter(tabPlayer));
 
         for (int i = 0; i < 80; i++) {
 
-            if (tabPlayer.isLegacy() && i >= 60) return;
+            if (tabPlayer.isLegacy() && i >= 60) break;
 
             Pair<Integer, TabColumn> rowColumn = getRowColumn(i);
             int modifiedIndex = getIndex(rowColumn.getKey(), rowColumn.getValue());
@@ -88,21 +93,32 @@ public class TabImpl {
             TabElement tabElement = elements.get(modifiedIndex);
             TabItem tabItem = tabAdapter.getItems(tabPlayer).getOrDefault(i, TabItem.DEFAULT);
 
-            if (!tabPlayer.isLegacy() && !tabElement.getSkin().matches(tabItem.getSkin())) {
-                tabElement.setSkin(tabItem.getSkin());
+            boolean updateSkin = !tabPlayer.isLegacy() && !tabElement.getSkin().matches(tabItem.getSkin());
+            boolean updatePing = !tabPlayer.isLegacy() && tabElement.getPing() != tabItem.getPing();
+            boolean updateText = !tabElement.getText().equals(ColorUtil.translate(tabItem.getText()));
+
+            tabElement.setText(ColorUtil.translate(tabItem.getText()));
+            tabElement.setSkin(tabItem.getSkin());
+            tabElement.setPing((short) Math.min(Math.max(0, tabItem.getPing()), Short.MAX_VALUE));
+
+
+            if (updateSkin) {
                 updateSkin(i, tabElement);
-            }
+            } else {
+                if (updatePing) {
+                    updatePing(tabElement);
+                }
 
-            if (tabElement.getPing() != tabItem.getPing()) {
-                tabElement.setPing((short) Math.min(Math.max(0, tabItem.getPing()), Short.MAX_VALUE));
-                updatePing(i, tabElement);
-            }
-
-            if (!tabElement.getText().equals(ColorUtil.translate(tabItem.getText()))) {
-                tabElement.setText(ColorUtil.translate(tabItem.getText()));
-                updateText(i, tabElement);
+                if (updateText) {
+                    updateText(i, tabElement);
+                }
             }
         }
+
+        removeQueue.flush();
+        addQueue.flush();
+        pingQueue.flush();
+        nameQueue.flush();
     }
 
     private void updateText(int id, TabElement tabElement) {
@@ -126,17 +142,12 @@ public class TabImpl {
                     )
             );
         } else {
-            tabPlayer.getUser().sendPacket(
-                    new WrapperPlayServerPlayerInfo(
-                            WrapperPlayServerPlayerInfo.Action.UPDATE_DISPLAY_NAME, Collections.singletonList(
-                            new WrapperPlayServerPlayerInfo.PlayerData(
-                                    Component.text(tabElement.getText()),
-                                    tabElement.getUserProfile(),
-                                    GameMode.SURVIVAL,
-                                    tabElement.getPing()
-                            )
-                    ))
-            );
+            nameQueue.push(new WrapperPlayServerPlayerInfo.PlayerData(
+                    Component.text(tabElement.getText()),
+                    tabElement.getUserProfile(),
+                    GameMode.SURVIVAL,
+                    tabElement.getPing()
+            ));
         }
     }
 
@@ -156,47 +167,28 @@ public class TabImpl {
         }
     }
 
-    private void updatePing(int id, TabElement tabElement) {
-        if (tabPlayer.isLegacy()) return;
-        tabPlayer.getUser().sendPacket(
-                new WrapperPlayServerPlayerInfo(
-                        WrapperPlayServerPlayerInfo.Action.UPDATE_LATENCY, Collections.singletonList(
-                        new WrapperPlayServerPlayerInfo.PlayerData(
-                                Component.text(ColorUtil.translate(tabElement.getText())),
-                                tabElement.getUserProfile(),
-                                GameMode.SURVIVAL,
-                                tabElement.getPing()
-                        )
-                ))
-        );
+    private void updatePing(TabElement tabElement) {
+        pingQueue.push(new WrapperPlayServerPlayerInfo.PlayerData(
+                Component.text(ColorUtil.translate(tabElement.getText())),
+                tabElement.getUserProfile(),
+                GameMode.SURVIVAL,
+                tabElement.getPing()
+        ));
     }
 
     private void updateSkin(int id, TabElement tabElement) {
-        tabPlayer.getUser().sendPacket(
-                new WrapperPlayServerPlayerInfo(
-                        WrapperPlayServerPlayerInfo.Action.REMOVE_PLAYER, Collections.singletonList(
-                        new WrapperPlayServerPlayerInfo.PlayerData(
-                                Component.text(tabPlayer.isLegacy() ? CODES.get(id) : ColorUtil.translate(tabElement.getText())),
-                                tabElement.getUserProfile(),
-                                GameMode.SURVIVAL,
-                                tabElement.getPing()
-                        )
-                ))
+        WrapperPlayServerPlayerInfo.PlayerData info = new WrapperPlayServerPlayerInfo.PlayerData(
+                Component.text(ColorUtil.translate(tabElement.getText())),
+                tabElement.getUserProfile(),
+                GameMode.SURVIVAL,
+                tabElement.getPing()
         );
+
+        removeQueue.push(info);
 
         tabElement.getUserProfile().setTextureProperties(tabElement.getSkin().toTexture());
 
-        tabPlayer.getUser().sendPacket(
-                new WrapperPlayServerPlayerInfo(
-                        WrapperPlayServerPlayerInfo.Action.ADD_PLAYER, Collections.singletonList(
-                        new WrapperPlayServerPlayerInfo.PlayerData(
-                                Component.text(tabPlayer.isLegacy() ? CODES.get(id) : ColorUtil.translate(tabElement.getText())),
-                                tabElement.getUserProfile(),
-                                GameMode.SURVIVAL,
-                                tabElement.getPing()
-                        )
-                ))
-        );
+        addQueue.push(info);
     }
 
     private void create(int id) {
@@ -210,19 +202,14 @@ public class TabImpl {
 
         elements.put(id, tabElement);
 
-        tabPlayer.getUser().sendPacket(
-                new WrapperPlayServerPlayerInfo(
-                        WrapperPlayServerPlayerInfo.Action.ADD_PLAYER, Collections.singletonList(
-                        new WrapperPlayServerPlayerInfo.PlayerData(
-                                Component.text(tabPlayer.isLegacy() ? CODES.get(id) : ColorUtil.translate(tabElement.getText())),
-                                userProfile,
-                                GameMode.SURVIVAL,
-                                tabElement.getPing()
-                        )
-                ))
-        );
-        if (tabPlayer.isLegacy()) {
+        addQueue.push(new WrapperPlayServerPlayerInfo.PlayerData(
+                Component.text(tabPlayer.isLegacy() ? CODES.get(id) : ColorUtil.translate(tabElement.getText())),
+                userProfile,
+                GameMode.SURVIVAL,
+                tabElement.getPing()
+        ));
 
+        if (tabPlayer.isLegacy()) {
             Pair<String, String> splitLine = ColorUtil.splitLine(tabElement.getText());
 
             tabPlayer.getUser().sendPacket(
