@@ -27,8 +27,9 @@ public class WrappedTabPlayer {
     public WrappedTabPlayer(final Player player) {
         this.uuid = player.getUniqueId();
         this.user = PacketEvents.getAPI().getPlayerManager().getUser(player);
-        this.tabImpl = new TabImpl(this);
         this.isLegacy = user.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10);
+
+        this.tabImpl = new TabImpl(this);
         this.tabAdapter = TabAdapter.DEFAULT;
     }
 
