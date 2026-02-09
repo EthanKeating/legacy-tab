@@ -81,6 +81,7 @@ public class TabImpl {
     }
 
     public void tick(TabAdapter tabAdapter) {
+        final Map<Integer, TabItem> items = tabAdapter.getItems(tabPlayer);
         updateHeaderFooter(tabAdapter.getHeaderFooter(tabPlayer));
 
         for (int i = 0; i < 80; i++) {
@@ -91,7 +92,7 @@ public class TabImpl {
             int modifiedIndex = getIndex(rowColumn.getKey(), rowColumn.getValue());
 
             TabElement tabElement = elements.get(modifiedIndex);
-            TabItem tabItem = tabAdapter.getItems(tabPlayer).getOrDefault(i, TabItem.DEFAULT);
+            TabItem tabItem = items.getOrDefault(i, TabItem.DEFAULT);
 
             boolean updateSkin = !tabPlayer.isLegacy() && !tabElement.getSkin().matches(tabItem.getSkin());
             boolean updatePing = !tabPlayer.isLegacy() && tabElement.getPing() != tabItem.getPing();
@@ -100,7 +101,6 @@ public class TabImpl {
             tabElement.setText(ColorUtil.translate(tabItem.getText()));
             tabElement.setSkin(tabItem.getSkin());
             tabElement.setPing((short) Math.min(Math.max(0, tabItem.getPing()), Short.MAX_VALUE));
-
 
             if (updateSkin) {
                 updateSkin(i, tabElement);
